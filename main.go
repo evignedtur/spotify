@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/zmb3/spotify"
+	"golang.org/x/oauth2"
 )
 
 type Token struct {
@@ -39,15 +40,9 @@ type TokenJsonSpotify struct {
 	Token string `json:"SpotifyToken"`
 }
 
-// redirectURI is the OAuth redirect URI for the application.
-// You must register an application at Spotify's developer portal
-// and enter this value.
-const redirectURI = "http://localhost:8080/callback"
-
 var (
 	auth      spotify.Authenticator
 	ch        = make(chan *spotify.Client)
-	state     = "abc123"
 	Tokens    []*Token
 	url_login string
 )
@@ -66,32 +61,55 @@ func main() {
 	r.HandleFunc("/login", login)
 	r.HandleFunc("/session/{token}", tokenToSpotify)
 
-	url_login = auth.AuthURL(state)
-	fmt.Println("Please log in to Spotify by visiting the following page in your browser:", url_login)
 	go checkForUpdates()
 
-	addr, err := determineListenAddress() //Get listening address
+	/*addr, err := determineListenAddress() //Get listening address
 	if err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
-	log.Fatal(http.ListenAndServe(addr, r))
+	//log.Fatal(http.ListenAndServe(addr, r))
+	log.Fatal(http.ListenAndServe(":80", r))
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+	keys, ok := r.URL.Query()["returnurl"]
+	if !ok || len(keys[0]) < 1 {
+		url_login = auth.AuthURL("abc123")
+	} else {
+		url_login = auth.AuthURL(url.QueryEscape(keys[0]))
+	}
 	http.Redirect(w, r, url_login, http.StatusSeeOther)
-	//io.WriteString(w, url_login)
 }
 
 func completeAuth(w http.ResponseWriter, r *http.Request) {
-	tok, err := auth.Token(state, r)
-	if err != nil {
-		http.Error(w, "Couldn't get token", http.StatusForbidden)
-		log.Fatal(err)
-	}
-	if st := r.FormValue("state"); st != state {
-		http.NotFound(w, r)
-		log.Fatalf("State mismatch: %s != %s\n", st, state)
+
+	var tok *oauth2.Token
+	var err error
+
+	keys, ok := r.URL.Query()["state"]
+	if (!ok || len(keys[0]) < 1) && keys[0] == "abc123" {
+		tok, err = auth.Token("abc123", r)
+
+		if err != nil {
+			http.Error(w, "Couldn't get token", http.StatusForbidden)
+			log.Fatal(err)
+		}
+		if st := r.FormValue("state"); st != "abc123" {
+			http.NotFound(w, r)
+			log.Fatalf("State mismatch: %s != %s\n", st, "abc123")
+		}
+	} else {
+		tok, err = auth.Token(keys[0], r)
+
+		if err != nil {
+			http.Error(w, "Couldn't get token", http.StatusForbidden)
+			log.Fatal(err)
+		}
+		if st := r.FormValue("state"); st != keys[0] {
+			http.NotFound(w, r)
+			log.Fatalf("State mismatch: %s != %s\n", st, keys[0])
+		}
 	}
 
 	var newToken Token
@@ -101,8 +119,6 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 	newToken.Refresh = tok.RefreshToken
 
 	Tokens = append(Tokens, &newToken)
-
-	//insertIntoDb(newToken)
 
 	w.Header().Set("Content-Type", "application/json")
 	var tokenjson TokenJson
@@ -115,7 +131,15 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 
 	writeTokensToFile()
 
-	w.Write(tokenjsonMarshal)
+	if len(keys) > 0 && keys[0] != "abc123" {
+		decodedurl, err := url.QueryUnescape(keys[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		http.Redirect(w, r, decodedurl+"/"+tokenjson.Token, http.StatusSeeOther)
+	} else {
+		w.Write(tokenjsonMarshal)
+	}
 
 }
 
