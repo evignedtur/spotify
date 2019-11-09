@@ -63,13 +63,13 @@ func main() {
 
 	go checkForUpdates()
 
-	/*addr, err := determineListenAddress() //Get listening address
+	addr, err := determineListenAddress() //Get listening address
 	if err != nil {
 		log.Fatal(err)
-	}*/
+	}
 
-	//log.Fatal(http.ListenAndServe(addr, r))
-	log.Fatal(http.ListenAndServe(":80", r))
+	log.Fatal(http.ListenAndServe(addr, r))
+	//log.Fatal(http.ListenAndServe(":80", r))
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
