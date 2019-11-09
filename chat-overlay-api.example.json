@@ -1,6 +1,5 @@
 {
 "callbackuri" : "",
 "clientid" : "",
-"clientsecret" : "",
-"dbConnection" : ""
+"clientsecret" : ""
 }
