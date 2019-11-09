@@ -1,1 +1,1 @@
-web: CHAT-OVERLAY-API
+web: chat-overlay-api
