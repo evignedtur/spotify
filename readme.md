@@ -9,4 +9,4 @@
 ## Available endpoints
 * GET - /login (Redirects user to spotify oauth login page and returns to callback page. Optional "?returnurl=" Which redirects the user to given url. If returnurl is empty the user will be presented with the token on the screen.)
 * GET - /session/{token} (Parameter is the token paramert generated on logon. Returns the Spotify token.)
-* GET - /callback (Only used by the spotify as a way to return data to the api.)
+* GET - /callback (Only used by spotify as a way to return data to the api.)
