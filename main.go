@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -68,7 +69,13 @@ func main() {
 	url_login = auth.AuthURL(state)
 	fmt.Println("Please log in to Spotify by visiting the following page in your browser:", url_login)
 	go checkForUpdates()
-	log.Fatal(http.ListenAndServe(":8080", r))
+
+	addr, err := determineListenAddress() //Get listening address
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Fatal(http.ListenAndServe(addr, r))
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -183,4 +190,12 @@ func updateSpotifyToken(token *Token) {
 
 	token.Token = spot.AccessToken
 	token.Expiry = time.Now().Local().Add(time.Hour)
+}
+
+func determineListenAddress() (string, error) { //Inorder to get the port heroku assigns us
+	port := os.Getenv("PORT")
+	if port == "" {
+		return "", fmt.Errorf("$PORT not set")
+	}
+	return ":" + port, nil
 }
