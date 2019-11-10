@@ -147,6 +147,7 @@ func tokenToSpotify(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var found bool
 	w.Header().Set("Content-Type", "application/json")
+	enableCors(&w)
 
 	for _, token := range Tokens {
 		if token.UUID.String() == vars["token"] {
@@ -222,4 +223,8 @@ func determineListenAddress() (string, error) { //Inorder to get the port heroku
 		return "", fmt.Errorf("$PORT not set")
 	}
 	return ":" + port, nil
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
