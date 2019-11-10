@@ -24,6 +24,10 @@ func writeTokensToFile() {
 func readTokensFromFile() {
 	createFileIfNotExist()
 	//Load Tokens
+
+	mu.Lock()
+	defer mu.Unlock()
+
 	file, err := os.Open("./tokens.json")
 	if err != nil {
 		log.Println(err)
