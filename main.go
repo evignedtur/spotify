@@ -19,7 +19,7 @@ import (
 )
 
 type Token struct {
-	UUID    uuid.UUID
+	UUID    string
 	Token   string
 	Expiry  time.Time
 	Refresh string
@@ -50,7 +50,9 @@ var (
 func main() {
 
 	ConfigInit()
-	readTokensFromFile()
+	connectToDb()
+	getTokensFromDb()
+
 	r := mux.NewRouter()
 
 	auth = spotify.NewAuthenticator(config.Callbackuri, spotify.ScopeUserReadCurrentlyPlaying, spotify.ScopeUserReadPlaybackState)
@@ -63,13 +65,13 @@ func main() {
 
 	go checkForUpdates()
 
-	addr, err := determineListenAddress() //Get listening address
+	/*addr, err := determineListenAddress() //Get listening address
 	if err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
-	log.Fatal(http.ListenAndServe(addr, r))
-	//log.Fatal(http.ListenAndServe(":80", r))
+	//log.Fatal(http.ListenAndServe(addr, r))
+	log.Fatal(http.ListenAndServe(":80", r))
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +115,7 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var newToken Token
-	newToken.UUID = uuid.New()
+	newToken.UUID = uuid.New().String()
 	newToken.Token = tok.AccessToken
 	newToken.Expiry = tok.Expiry
 	newToken.Refresh = tok.RefreshToken
@@ -122,7 +124,7 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	var tokenjson TokenJson
-	tokenjson.Token = newToken.UUID.String()
+	tokenjson.Token = newToken.UUID
 
 	tokenjsonMarshal, err := json.Marshal(tokenjson)
 	if err != nil {
@@ -130,6 +132,7 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeTokensToFile()
+	insertTokenToDb(newToken)
 
 	if len(keys) > 0 && keys[0] != "abc123" {
 		decodedurl, err := url.QueryUnescape(keys[0])
@@ -150,7 +153,7 @@ func tokenToSpotify(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
 	for _, token := range Tokens {
-		if token.UUID.String() == vars["token"] {
+		if token.UUID == vars["token"] {
 			found = true
 			var tokenJson TokenJsonSpotify
 			tokenJson.Token = token.Token
@@ -178,7 +181,10 @@ func checkForUpdates() {
 			if err == nil {
 				if timeInt < 10 {
 					updateSpotifyToken(token)
-					writeTokensToFile()
+					updateTokenFromDb(token)
+				} else {
+					updateSpotifyToken(token)
+					updateTokenFromDb(token)
 				}
 			} else {
 				fmt.Println(err)

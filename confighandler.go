@@ -11,6 +11,7 @@ type Config struct {
 	Callbackuri  string
 	Clientid     string
 	Clientsecret string
+	Databaseurl  string
 }
 
 var config Config
@@ -36,5 +37,5 @@ func ConfigInit() {
 		log.Println(err)
 	}
 
-	log.Println(config)
+	//log.Println(config)
 }

@@ -1,5 +1,6 @@
 {
-"callbackuri" : "",
-"clientid" : "",
-"clientsecret" : ""
+  "callbackuri" : "",
+  "clientid" : "",
+  "clientsecret" : "",
+  "databaseurl": ""
 }
