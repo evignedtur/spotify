@@ -182,9 +182,6 @@ func checkForUpdates() {
 				if timeInt < 10 {
 					updateSpotifyToken(token)
 					updateTokenFromDb(token)
-				} else {
-					updateSpotifyToken(token)
-					updateTokenFromDb(token)
 				}
 			} else {
 				fmt.Println(err)
