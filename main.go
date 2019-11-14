@@ -131,7 +131,6 @@ func completeAuth(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	writeTokensToFile()
 	insertTokenToDb(newToken)
 
 	if len(keys) > 0 && keys[0] != "abc123" {
@@ -184,7 +183,8 @@ func checkForUpdates() {
 					updateTokenFromDb(token)
 				}
 			} else {
-				fmt.Println(err)
+				updateSpotifyToken(token)
+				updateTokenFromDb(token)
 			}
 		}
 	}
